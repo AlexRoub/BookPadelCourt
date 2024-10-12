@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.proservices.bookpadelcourt.dto.ReservationDto;
+import com.proservices.bookpadelcourt.model.dto.ReservationDto;
 import com.proservices.bookpadelcourt.service.ReservationService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/reservations")
+@RequestMapping("/api/v1/reservations")
 @RequiredArgsConstructor
 public class ReservationController {
 

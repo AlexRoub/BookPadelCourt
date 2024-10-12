@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.proservices.bookpadelcourt.dto.CourtAvailabilityDto;
-import com.proservices.bookpadelcourt.dto.request.CourtBookingRequest;
-import com.proservices.bookpadelcourt.dto.CourtDto;
+import com.proservices.bookpadelcourt.model.dto.CourtAvailabilityDto;
+import com.proservices.bookpadelcourt.model.request.CourtBookingRequest;
+import com.proservices.bookpadelcourt.model.dto.CourtDto;
 import com.proservices.bookpadelcourt.service.CourtService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/courts")
+@RequestMapping("/api/v1/courts")
 public class CourtController {
 
 	private final CourtService courtService;

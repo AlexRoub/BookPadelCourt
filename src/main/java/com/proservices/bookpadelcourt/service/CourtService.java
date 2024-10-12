@@ -6,11 +6,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.proservices.bookpadelcourt.dto.CourtDto;
-import com.proservices.bookpadelcourt.dto.request.DeactivateDatesRequest;
+import com.proservices.bookpadelcourt.model.dto.CourtDto;
+import com.proservices.bookpadelcourt.model.request.DeactivateDatesRequest;
 import com.proservices.bookpadelcourt.entity.Court;
 import com.proservices.bookpadelcourt.entity.DeactivationDate;
 import com.proservices.bookpadelcourt.entity.Reservation;

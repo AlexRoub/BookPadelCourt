@@ -6,8 +6,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.proservices.bookpadelcourt.dto.ReservationDto;
-import com.proservices.bookpadelcourt.dto.request.ReservationRequest;
+import com.proservices.bookpadelcourt.model.dto.ReservationDto;
+import com.proservices.bookpadelcourt.model.request.ReservationRequest;
 import com.proservices.bookpadelcourt.entity.Court;
 import com.proservices.bookpadelcourt.entity.Reservation;
 import com.proservices.bookpadelcourt.enums.Status;

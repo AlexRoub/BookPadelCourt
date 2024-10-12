@@ -1,12 +1,13 @@
 package com.proservices.bookpadelcourt.entity;
 
-import java.time.LocalDate;
+import com.proservices.bookpadelcourt.model.TokenType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -17,24 +18,29 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "deactivation_date")
+@Table(name = "token")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class DeactivationDate {
+public class Token {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@GeneratedValue
+	public Long id;
 
-	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "court_id", nullable = false)
-	private Court court;
+	@Column(unique = true)
+	public String token;
 
-	@Column
-	private LocalDate startDate;
+	@Enumerated(EnumType.STRING)
+	public TokenType tokenType = TokenType.BEARER;
 
-	@Column
-	private LocalDate endDate;
+	public boolean revoked;
+
+	public boolean expired;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
+	public User user;
 }
+

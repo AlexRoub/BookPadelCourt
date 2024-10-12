@@ -1,56 +1,63 @@
 package com.proservices.bookpadelcourt.config;
 
+import java.io.IOException;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
+import com.proservices.bookpadelcourt.repository.TokenRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-	private final JwtTokenProvider jwtTokenProvider;
+	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
-
-	public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
-		this.jwtTokenProvider = jwtTokenProvider;
-		this.userDetailsService = userDetailsService;
-	}
+	private final TokenRepository tokenRepository;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 		throws IOException, ServletException {
-		String token = getJwtFromRequest(request);
 
-		if (token != null && jwtTokenProvider.validateToken(token)) {
-			String username = jwtTokenProvider.getUsernameFromToken(token);
-
-			UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-			UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-				userDetails, null, userDetails.getAuthorities());
-			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-			// Set the authentication in the context
-			SecurityContextHolder.getContext().setAuthentication(authentication);
+		if (request.getServletPath()
+			.contains("/api/v1/auth")) {
+			filterChain.doFilter(request, response);
+			return;
 		}
 
+		final var authHeader = request.getHeader("Authorization");
+
+		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
+		final var jwt = authHeader.substring(7);
+		final var userEmail = jwtService.extractUsername(jwt);
+		if (userEmail != null
+			&& SecurityContextHolder.getContext()
+			.getAuthentication() == null) {
+			final var userDetails = userDetailsService.loadUserByUsername(userEmail);
+			final var isTokenValid = tokenRepository.findByToken(jwt)
+				.map(t -> !t.isExpired() && !t.isRevoked())
+				.orElse(false);
+			if (jwtService.isTokenValid(jwt, userDetails) && Boolean.TRUE.equals(isTokenValid)) {
+				final var authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+				SecurityContextHolder.getContext()
+					.setAuthentication(authToken);
+			}
+		}
 		filterChain.doFilter(request, response);
-	}
-
-	private String getJwtFromRequest(HttpServletRequest request) {
-		String bearerToken = request.getHeader("Authorization");
-		if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-			return bearerToken.substring(7);
-		}
-		return null;
 	}
 }

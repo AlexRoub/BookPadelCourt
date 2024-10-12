@@ -1,9 +1,16 @@
 package com.proservices.bookpadelcourt.entity;
 
+import java.io.Serial;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import com.proservices.bookpadelcourt.enums.Role;
 
@@ -19,12 +26,21 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
 @Data
-public class User {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User implements UserDetails {
+
+	@Serial
+	private static final long serialVersionUID = -8237503049511332347L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,4 +78,34 @@ public class User {
 	// Additional fields like Google authentication, fingerprint status, etc.
 	private boolean googleAuthenticated;
 	private boolean fingerprintAuthenticated;
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+
+		return List.of(new SimpleGrantedAuthority(role.name()));
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+
+		return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+
+		return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+
+		return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+
+		return true;
+	}
 }

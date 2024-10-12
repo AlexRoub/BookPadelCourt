@@ -11,15 +11,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.proservices.bookpadelcourt.dto.ReservationDto;
-import com.proservices.bookpadelcourt.dto.request.DeactivateDatesRequest;
+import com.proservices.bookpadelcourt.model.dto.ReservationDto;
+import com.proservices.bookpadelcourt.model.request.DeactivateDatesRequest;
 import com.proservices.bookpadelcourt.service.CourtService;
 import com.proservices.bookpadelcourt.service.ReservationService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 public class AdminController {
 
@@ -29,7 +29,7 @@ public class AdminController {
 	@PostMapping("/courts/{courtId}/reservations")
 	public ResponseEntity<List<ReservationDto>> getCourtReservations(@PathVariable final Long courtId, @RequestBody final LocalDate date) {
 
-		final List<ReservationDto> reservations = reservationService.getCourtReservations(courtId, date);
+		final var reservations = reservationService.getCourtReservations(courtId, date);
 		return ResponseEntity.ok(reservations);
 	}
 

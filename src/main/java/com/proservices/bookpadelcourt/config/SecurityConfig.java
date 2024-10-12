@@ -1,80 +1,51 @@
 package com.proservices.bookpadelcourt.config;
 
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 
-import com.proservices.bookpadelcourt.service.CustomUserDetailsService;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
-	private final CustomUserDetailsService customUserDetailsService;
-	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private static final String[] WHITE_LIST_URL =
+		{ "/actuator/**", "/api/v1/auth/**", "/v2/api-docs", "/v3/api-docs", "/v3/api-docs/**", "/swagger-resources",
+			"/swagger-resources/**", "/configuration/ui", "/configuration/security", "/swagger-ui/**", "/webjars/**", "/swagger-ui.html" };
 
-	public SecurityConfig(CustomUserDetailsService customUserDetailsService,
-		JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-		JwtAuthenticationFilter jwtAuthenticationFilter) {
-
-		this.customUserDetailsService = customUserDetailsService;
-		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
-		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-	}
+	private final JwtAuthenticationFilter jwtAuthFilter;
+	private final AuthenticationProvider authenticationProvider;
+	private final LogoutHandler logoutHandler;
 
 	@Bean
-	public AuthenticationManager authenticationManager(HttpSecurity http,
-		PasswordEncoder passwordEncoder,
-		UserDetailsService userDetailsService)
+	public SecurityFilterChain securityFilterChain(final HttpSecurity http)
 		throws Exception {
 
-		return http.getSharedObject(AuthenticationManagerBuilder.class)
-			.userDetailsService(customUserDetailsService)
-			.passwordEncoder(passwordEncoder)
-			.and()
-			.build();
-	}
-
-	// SecurityFilterChain bean (for Spring Boot 3.x and newer)
-	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http)
-		throws Exception {
-
-		http.cors()
-			.and()
-			.csrf()
-			.disable()
-			.exceptionHandling()
-			.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-			.and()
-			.sessionManagement()
-			.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No session
-			.and()
-			.authorizeHttpRequests()
-			.antMatchers("/api/auth/**")
-			.permitAll() // Allow unauthenticated access to auth endpoints
-			.anyRequest()
-			.authenticated(); // All other endpoints require authentication
-
-		// Add JWT filter before UsernamePasswordAuthenticationFilter
-		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+		http.csrf(AbstractHttpConfigurer::disable)
+			.authorizeHttpRequests(req -> req.requestMatchers(WHITE_LIST_URL)
+				.permitAll()
+				.anyRequest()
+				.authenticated())
+			.sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
+			.authenticationProvider(authenticationProvider)
+			.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+			.logout(logout -> logout.logoutUrl("/api/v1/auth/logout")
+				.addLogoutHandler(logoutHandler)
+				.logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext()));
 
 		return http.build();
-	}
-
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-
-		return new BCryptPasswordEncoder();  // Use BCrypt for password hashing
 	}
 }

@@ -1,8 +1,7 @@
-package com.proservices.bookpadelcourt.dto;
+package com.proservices.bookpadelcourt.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 
 @Data
 public class LoginDto {

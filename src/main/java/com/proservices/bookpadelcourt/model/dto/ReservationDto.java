@@ -1,4 +1,4 @@
-package com.proservices.bookpadelcourt.dto;
+package com.proservices.bookpadelcourt.model.dto;
 
 import java.time.LocalDate;
 
