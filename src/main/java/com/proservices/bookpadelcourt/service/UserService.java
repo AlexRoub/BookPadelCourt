@@ -86,6 +86,31 @@ public class UserService {
 			.build();
 	}
 
+	@Transactional
+	public AuthenticationResponse registerNewSuperAdmin(@NonNull final UserRegistrationDto registrationDto) {
+
+		checkIfUserExists(registrationDto);
+
+		final var user = User.builder()
+			.username(registrationDto.getUsername())
+			.email(registrationDto.getEmail())
+			.password(passwordEncoder.encode(registrationDto.getPassword()))
+			.role(Role.SUPER_ADMIN)
+			.build();
+
+		final var savedUser = userRepository.save(user);
+
+		final var jwtToken = jwtService.generateToken(user);
+		final var refreshToken = jwtService.generateRefreshToken(user);
+
+		tokenService.saveUserToken(savedUser, jwtToken);
+
+		return AuthenticationResponse.builder()
+			.accessToken(jwtToken)
+			.refreshToken(refreshToken)
+			.build();
+	}
+
 	public AuthenticationResponse authenticate(final AuthenticationRequest request) {
 
 		final var authToken = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());

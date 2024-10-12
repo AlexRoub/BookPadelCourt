@@ -2,5 +2,6 @@ package com.proservices.bookpadelcourt.enums;
 
 public enum Role {
 	USER,
-	ADMIN
+	ADMIN,
+	SUPER_ADMIN
 }

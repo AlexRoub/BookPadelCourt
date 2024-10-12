@@ -43,6 +43,12 @@ public class AuthenticationController {
 		return ResponseEntity.ok(userService.registerNewAdmin(registrationDto));
 	}
 
+	@PostMapping("/register/super-admin")
+	public ResponseEntity<AuthenticationResponse> registerSuperAdmin(@RequestBody @Valid final UserRegistrationDto registrationDto) {
+
+		return ResponseEntity.ok(userService.registerNewSuperAdmin(registrationDto));
+	}
+
 	@PostMapping("/login")
 	public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody final AuthenticationRequest request) {
 
