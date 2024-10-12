@@ -1,0 +1,16 @@
+package com.proservices.bookpadelcourt.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class CourtDto {
+
+	private Long id;
+	private String name;
+	private String location;
+	private String company;
+	private Boolean isActive;
+	private String createdAt;
+}
