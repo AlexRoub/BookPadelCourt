@@ -1,7 +1,9 @@
 package com.proservices.bookpadelcourt.controller;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.proservices.bookpadelcourt.model.dto.CourtAvailabilityDto;
-import com.proservices.bookpadelcourt.model.request.CourtBookingRequest;
+import com.proservices.bookpadelcourt.entity.Reservation;
 import com.proservices.bookpadelcourt.model.dto.CourtDto;
+import com.proservices.bookpadelcourt.model.request.CourtBookingRequest;
 import com.proservices.bookpadelcourt.service.CourtService;
 
 import lombok.RequiredArgsConstructor;
@@ -35,12 +37,20 @@ public class CourtController {
 		return ResponseEntity.ok(courts);
 	}
 
-	@GetMapping("/{id}/availability")
-	public ResponseEntity<CourtAvailabilityDto> checkAvailability(@PathVariable final Long id, @RequestParam final LocalDate date) {
+	@GetMapping("/{courtId}/availability")
+	public ResponseEntity<Map<String, List<LocalTime>>> getCourtAvailability(@PathVariable final Long courtId, @RequestParam final LocalDate date) {
 
-		final CourtAvailabilityDto availability = courtService.checkAvailability(id, date);
+		final List<Reservation> reservations = courtService.getCourtReservationsByDate(courtId, date);
 
-		return ResponseEntity.ok(availability);
+		// Generate the half-hour time slots (from 8:00 AM to 10:00 PM as an example)
+		final var startTime = LocalTime.of(8, 0);
+		final var endTime = LocalTime.of(22, 0);
+		final List<LocalTime> halfHourSlots = generateHalfHourSlots(startTime, endTime);
+
+		// Split into reserved and free slots
+		final Map<String, List<LocalTime>> slotMap = splitSlotsIntoFreeAndReserved(halfHourSlots, reservations);
+
+		return ResponseEntity.ok(slotMap);
 	}
 
 	@PostMapping("/{id}/book")
@@ -51,7 +61,8 @@ public class CourtController {
 		if (isSuccess) {
 			return ResponseEntity.ok("Court booked successfully.");
 		} else {
-			return ResponseEntity.status(HttpStatus.CONFLICT).body("Court not available for the selected time.");
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body("Court not available for the selected time.");
 		}
 	}
 }

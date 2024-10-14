@@ -2,12 +2,16 @@ package com.proservices.bookpadelcourt.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.proservices.bookpadelcourt.entity.Company;
 import com.proservices.bookpadelcourt.model.dto.CourtDto;
 import com.proservices.bookpadelcourt.model.request.DeactivateDatesRequest;
 import com.proservices.bookpadelcourt.entity.Court;
@@ -31,7 +35,7 @@ public class CourtService {
 	// Get all courts
 	public List<CourtDto> getAllCourts() {
 
-		List<Court> courts = courtRepository.findAll();
+		final var courts = courtRepository.findAll();
 		return courts.stream()
 			.map(court -> CourtDto.builder()
 				.id(court.getId())
@@ -45,8 +49,60 @@ public class CourtService {
 			.collect(Collectors.toList());
 	}
 
+	public Map<String, List<LocalTime>> getCourtReservationsByDate(final Long courtId, final LocalDate date) {
+
+		final var reservations = reservationRepository.findByCourtIdAndDate(courtId, date);
+		final var court = courtRepository.findById(courtId)
+			.orElse(null);
+
+		final var company = court.getCompany();
+		final var startTime = company.getDailyOpenedFrom();
+		final var endTime = company.getDailyOpenedUntil();
+		final var halfHourSlots = generateHalfHourSlots(startTime, endTime);
+
+		return splitSlotsIntoFreeAndReserved(halfHourSlots, reservations);
+	}
+
+	private Map<String, List<LocalTime>> splitSlotsIntoFreeAndReserved(final List<LocalTime> halfHourSlots, final List<Reservation> reservations) {
+
+		final List<LocalTime> reservedSlots = new ArrayList<>();
+		final List<LocalTime> freeSlots = new ArrayList<>(halfHourSlots);
+
+		for (final var reservation : reservations) {
+			final var reservationStart = reservation.getStartTime();
+			final var reservationEnd = reservation.getEndTime();
+
+			// Loop through the slots and mark the reserved ones
+			for (final var slot : halfHourSlots) {
+				if (!slot.isBefore(reservationStart) && slot.isBefore(reservationEnd)) {
+					reservedSlots.add(slot);
+				}
+			}
+		}
+
+		// Remove reserved slots from the free slots list
+		freeSlots.removeAll(reservedSlots);
+
+		// Create a map to store free and reserved slots
+		final Map<String, List<LocalTime>> slotMap = new HashMap<>();
+		slotMap.put("reserved", reservedSlots);
+		slotMap.put("free", freeSlots);
+
+		return slotMap;
+	}
+
+	private List<LocalTime> generateHalfHourSlots(LocalTime startTime, final LocalTime endTime) {
+
+		final List<LocalTime> slots = new ArrayList<>();
+		while (startTime.isBefore(endTime)) {
+			slots.add(startTime);
+			startTime = startTime.plusMinutes(30); // Increment by 30 minutes
+		}
+		return slots;
+	}
+
 	// Get a court by ID
-	public Optional<CourtDto> getCourtById(Long courtId) {
+	public Optional<CourtDto> getCourtById(final Long courtId) {
 
 		return courtRepository.findById(courtId)
 			.map(court -> CourtDto.builder()
@@ -60,9 +116,9 @@ public class CourtService {
 				.build());
 	}
 
-	public void deactivateCourt(DeactivateDatesRequest deactivateRequest) {
+	public void deactivateCourt(final DeactivateDatesRequest deactivateRequest) {
 
-		Court court = courtRepository.findById(deactivateRequest.getCourtId())
+		final var court = courtRepository.findById(deactivateRequest.getCourtId())
 			.orElseThrow(() -> new RuntimeException("Court not found"));
 
 		final var deactivationDate = DeactivationDate.builder()
@@ -74,14 +130,15 @@ public class CourtService {
 		deactivateDatesRepository.save(deactivationDate);
 	}
 
-	public void reactivateCourt(Long courtId, Long deactivationId) {
+	public void reactivateCourt(final Long courtId, final Long deactivationId) {
 
-		var court = courtRepository.findById(courtId)
+		final var court = courtRepository.findById(courtId)
 			.orElseThrow(() -> new RuntimeException("Court not found"));
 
 		final var optDeactivationDate = court.getDeactivateDates()
 			.stream()
-			.filter(d -> d.getId().equals(deactivationId))
+			.filter(d -> d.getId()
+				.equals(deactivationId))
 			.findFirst();
 
 		if (optDeactivationDate.isPresent()) {
@@ -90,28 +147,28 @@ public class CourtService {
 		}
 	}
 
-	public List<Court> checkAvailability(LocalDate date, LocalTime startTime, LocalTime endTime) {
+	public List<Court> checkAvailability(final LocalDate date, final LocalTime startTime, final LocalTime endTime) {
 
-		List<Court> allCourts = courtRepository.findAll();
+		final var allCourts = courtRepository.findAll();
 		return allCourts.stream()
 			.filter(court -> reservationRepository.isCourtAvailable(court.getId(), date, startTime, endTime))
 			.toList();
 	}
 
-	public Reservation bookCourt(User user,
-		Court court,
-		LocalDate date,
-		LocalTime startTime,
-		LocalTime endTime,
-		Integer playersNeeded,
-		String skillLevel) {
+	public Reservation bookCourt(final User user,
+		final Court court,
+		final LocalDate date,
+		final LocalTime startTime,
+		final LocalTime endTime,
+		final Integer playersNeeded,
+		final String skillLevel) {
 		// Check if the court is available before booking
 		if (!reservationRepository.isCourtAvailable(court.getId(), date, startTime, endTime)) {
 			throw new IllegalStateException("Court is not available for the selected time.");
 		}
 
 		// Create a new reservation
-		Reservation reservation = Reservation.builder()
+		final var reservation = Reservation.builder()
 			.user(user)
 			.court(court)
 			.date(date)
@@ -125,7 +182,7 @@ public class CourtService {
 		return reservationRepository.save(reservation);
 	}
 
-	public List<Reservation> getCourtReservations(Long courtId) {
+	public List<Reservation> getCourtReservations(final Long courtId) {
 
 		return reservationRepository.findByCourtId(courtId);
 	}

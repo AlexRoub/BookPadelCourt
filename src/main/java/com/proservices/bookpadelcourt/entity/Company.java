@@ -1,10 +1,8 @@
 package com.proservices.bookpadelcourt.entity;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -48,10 +46,10 @@ public class Company {
 	private String postalCode;
 
 	@Column(nullable = false)
-	private LocalDateTime dailyOpenedFrom;
+	private LocalTime dailyOpenedFrom;
 
 	@Column(nullable = false)
-	private LocalDate dailyOpenedTo;
+	private LocalTime dailyOpenedUntil;
 
 	@Column
 	private LocalDate closedFrom;
